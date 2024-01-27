@@ -2,36 +2,29 @@
 """
  function & Module for Web
 """
-import requests
 import redis
+import requests
 from functools import wraps
+from typing import Callable
 
-r = redis.Redis()
 
-
-def count_url_calls(func):
+def track_get_page(fn: Callable) -> Callable:
     """ The wrapper function in decorator """
-    @wraps(func)
-    def wrapper(url):
-        """ The wrapper function in decorator """
-        r.incr(f"count:{url}")
-        return func(url)
+    @wraps(fn)
+    def wrapper(url: str) -> str:
+        """ The decorator to cache the result in time of 10 seconds """
+        client = redis.Redis()
+        client.incr(f'count:{url}')
+        cached_page = client.get(f'{url}')
+        if cached_page:
+            return cached_page.decode('utf-8')
+        response = fn(url)
+        client.set(f'{url}', response, 10)
+        return response
     return wrapper
 
-def cache_page(func):
-    """ The decorator to cache the result in time of 10 seconds """
-    @wraps(func)
-    def wrapper(url):
-        """ The function for the decorator """
-        result = r.get(url)
-        if result is None:
-            result = func(url)
-            r.set(url, result, ex=10)
-        return result
-    return wrapper
 
-@count_url_calls
-@cache_page
+@track_get_page
 def get_page(url: str) -> str:
     """ The function to get the URL from HTML """
     response = requests.get(url)
