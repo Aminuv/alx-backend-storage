@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-    function & Module for Web
+ function & Module for Web
 """
 import requests
 import redis
@@ -10,7 +10,7 @@ r = redis.Redis()
 
 
 def count_url_calls(func):
-    """ The decorator to count """
+    """ The wrapper function in decorator """
     @wraps(func)
     def wrapper(url):
         """ The wrapper function in decorator """
